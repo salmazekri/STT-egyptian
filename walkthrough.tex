@@ -1,0 +1,306 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{a4wide}  % Adjusts margins for A4 paper
+\usepackage{geometry}
+\usepackage{times}
+\usepackage{amsmath} 
+\usepackage{hyperref} % Include hyperref package for URLs
+\usepackage{booktabs} % For better table formatting
+\geometry{top=2.5cm, bottom=2.5cm, left=2cm, right=2cm}  % Adjusting margins
+
+\begin{document}
+
+\begin{Large}
+    \textsf{\textbf{ Building and fine-tuning a speech-to-text (STT) model using the wav2vec 2.0 framework for Arabic language recognition.}}
+\end{Large}
+
+\vspace{1ex}
+
+\textsf{\textbf{Student:}} \text{Salma Ahmed, Mena Majidi, Malak Reda}\vspace{1ex}
+
+
+\subsection*{Standard Arabic Dataset:}
+
+The dataset used for Arabic speech recognition was sourced from the Mozilla Common Voice 11.0 dataset for Arabic (\texttt{mozilla-foundation/common\_voice\_11\_0}, language code: 'ar'). The dataset consists of speech samples with corresponding transcripts in Arabic. The collected data was split into training+validation and test datasets as follows:
+
+\begin{itemize}
+    \item Training and Validation Set: `train+validation` split.
+    \item Test Set: `test` split.
+\end{itemize}
+
+The following columns were removed from both training and test datasets: \texttt{accent}, \texttt{age}, \texttt{client\_id}, \texttt{down\_votes}, \texttt{gender}, \texttt{locale}, \texttt{segment}, \texttt{up\_votes}.
+
+\subsection*{Preprocessing Steps}
+
+The preprocessing steps were as follows:
+
+\begin{itemize}
+    \item Removal of special characters (e.g., punctuation, symbols) using regular expressions.
+    \item Substitution of Arabic characters and noise removal (e.g., tashdid, tanwin).
+    \item Mapping of sentences to input and label sequences suitable for Wav2Vec2 model processing.
+    \item Conversion of audio data to 16,000 Hz sampling rate.
+    \item Creation of a vocabulary from the cleaned text data.
+\end{itemize}
+
+\subsection*{Vocabulary Creation}
+
+A unique vocabulary was created by combining unique characters from both the training and test datasets, including special tokens `[UNK]` and `[PAD]`.
+
+
+\subsection*{Data Preprocessing and Transformation}
+
+The preprocessing function included in the model setup transformed audio data into input values, and sentences were encoded into token IDs using the tokenizer and feature extractor. Padding and attention mask handling were managed to ensure proper training.
+
+\section*{Model Training and Evaluation}
+
+\subsection*{Model Setup}
+
+The model used was `facebook/wav2vec2-large-xlsr-53`. The following hyperparameters were configured:
+
+\begin{itemize}
+    \item Attention Dropout: 0.1
+    \item Hidden Dropout: 0.1
+    \item Feature Projection Dropout: 0.0
+    \item Mask Time Probability: 0.05
+    \item Layer Dropout: 0.1
+    \item CTC Loss Reduction: Mean
+    \item Pad Token ID: 157
+\end{itemize}
+
+The feature extractor and tokenizer were customized for Arabic, and a DataCollator was defined for dynamic padding.
+
+\subsection*{Training Arguments}
+
+Training was conducted over 5 epochs using the following parameters:
+
+\begin{itemize}
+    \item Batch Size: 8
+    \item Gradient Accumulation Steps: 8
+    \item Learning Rate: 1e-4
+    \item Warmup Steps: 500
+    \item Evaluation Strategy: Steps (every 400 steps)
+    \item FP16 Training: Enabled
+\end{itemize}
+
+\subsection*{Training Process}
+
+The model was trained using the Trainer API, with evaluation occurring after every 400 steps. The trainer used the defined data collator to handle padding and masking correctly. The computation of the Word Error Rate (WER) metric was used for evaluating the model.
+
+\subsection*{Evaluation Metrics}
+
+The WER was computed for both training and test sets. For each step during evaluation, the computed WER was logged, and the best models were saved.
+
+\subsection*{Results}
+
+\begin{itemize}
+    \item \textbf{Final Training WER}: \textbf{0.500657}
+    \item \textbf{Final Test WER}: \textbf{0.491042}
+\end{itemize}
+
+
+\subsection*{Model Saving}
+
+The trained model and processor were saved at the specified directories:
+
+\begin{itemize}
+    \item \textbf{Trained Model Path}: `\textbf{./wav2vec2-arabic-model}`
+    \item \textbf{Processor Path}: `\textbf{./wav2vec2-arabic-processor}`
+\end{itemize}
+
+
+\subsection*{Conclusion}
+
+This report details the process from dataset collection, preprocessing, model training, and evaluation to the final model saving. The metrics achieved reflect the model's performance on Arabic speech recognition tasks.
+
+\subsection*{Training Results}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{cccc}
+        \toprule
+        Step & Training Loss & Validation Loss & WER \\ 
+        \midrule
+        400 & 9.627800 & 3.030787 & 1.000000 \\ 
+        800 & 2.236600 & 0.663298 & 0.768855 \\ 
+        1200 & 0.716400 & 0.419083 & 0.588736 \\ 
+        1600 & 0.539000 & 0.358852 & 0.537523 \\ 
+        2000 & 0.475500 & 0.336499 & 0.512864 \\ 
+        2400 & 0.438100 & 0.317160 & 0.500657 \\ 
+        2800 & 0.411500 & 0.314824 & 0.491042 \\ 
+        \bottomrule
+    \end{tabular}
+    \caption{Training and Validation Results with WER}
+    \label{tab:training_results}
+\end{table}
+
+\section*{Egyptian Arabic Dataset: Collected by scraping audio data from sources such as YouTube, podcasts, and Egyptian TV programs.}
+
+\section*{Code Explanation}
+
+The Python code is designed to handle audio processing and transcription from YouTube playlists. Below is the step-by-step explanation of the code.
+\newline
+\newline
+\newline
+\subsection*{Code Breakdown}
+
+\begin{itemize}
+    \item \textbf{Imports}:
+    \begin{itemize}
+        \item \textbf{Libraries}:
+        \begin{itemize}
+            \item \texttt{os}: Provides a way of using operating system-dependent functionality like reading or writing to the file system.
+            \item \texttt{gc}: Implements automatic garbage collection to free up memory.
+            \item \texttt{speech\_recognition}: A library for performing speech recognition, allowing audio input to be converted to text.
+            \item \texttt{pydub}: Facilitates audio processing, including manipulation and conversion of audio files.
+            \item \texttt{yt\_dlp}: A fork of youtube-dl that allows downloading videos from YouTube and other sites.
+            \item \texttt{pandas}: A powerful data manipulation and analysis library, particularly useful for handling structured data.
+            \item \texttt{spleeter}: A library for separating audio sources, commonly used in music processing.
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Mount Google Drive}:
+    \begin{itemize}
+        \item The code mounts Google Drive to Google Colab for saving processed files and transcription outputs.
+    \end{itemize}
+
+    \item \textbf{Functions}:
+    \begin{itemize}
+        \item \texttt{clear\_memory()}: Clears memory by performing garbage collection.
+        \item \texttt{remove\_silence(audio)}: Removes silence from audio using the pydub library’s silence detection functionality.
+        \item \texttt{process\_audio\_chunk(audio\_chunk, chunk\_index, video\_id)}: Processes individual chunks of audio, saves them, transcribes them, and returns transcriptions.
+        \item \texttt{process\_video(video\_url)}: Handles video processing by downloading the audio, cleaning it, chunking, and transcribing. Results are saved in a CSV file.
+        \item \texttt{extract\_video\_urls\_from\_playlist(playlist\_url)}: Extracts video URLs from a YouTube playlist.
+        \item \texttt{process\_playlist(playlist\_url)}: Processes all videos from a playlist, handles transcriptions, and saves results.
+    \end{itemize}
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+
+\section*{Usage:}
+\begin{itemize}
+    \item We created a playlist on YouTube and collected some videos to scrape them.
+    \begin{quote}
+        \texttt{\$playlisturl = '\url{https://www.youtube.com/playlist?list=PLwR8LGk84674ckfo6BGR0f5ioSqzB55_A}'}\\
+        \texttt{\$process\_playlist(playlisturl)}
+    \end{quote}
+\end{itemize}
+
+\subsection*{Explanation of the Code}
+This section outlines the steps taken for processing audio data and training a model using an Egyptian Arabic dataset.
+
+\begin{itemize}
+    \item \textbf{Text Preprocessing}  
+      The function \texttt{remove\_special\_characters} cleans up text transcripts by:
+      \begin{itemize}
+          \item Removing special characters, Arabic diacritics, and unnecessary spaces.
+          \item Normalizing Arabic characters replacing variations of with a standard form.
+          \item Ensuring only Arabic characters are retained.
+      \end{itemize}
+
+    \item \textbf{Vocabulary Preparation}  
+      The \texttt{build\_vocab} function:
+      \begin{itemize}
+          \item Reads transcripts from multiple CSV files.
+          \item Processes them using \texttt{remove\_special\_characters}.
+          \item Creates a character-level vocabulary from unique characters in the cleaned text.
+          \item Adds special tokens like [UNK] (unknown), [PAD] (padding), and maps space to |.
+          \item Saves the vocabulary as a JSON file for tokenizer initialization.
+      \end{itemize}
+
+    \item \textbf{Processor Initialization}  
+      The \texttt{initialize\_processor} function:
+      \begin{itemize}
+          \item Initializes a \texttt{Wav2Vec2CTCTokenizer} using the created vocabulary.
+          \item Sets up a \texttt{Wav2Vec2FeatureExtractor} for audio preprocessing (resampling, padding, and normalization).
+          \item Combines these into a \texttt{Wav2Vec2Processor} for managing input preparation.
+          \item Saves the processor for reuse.
+      \end{itemize}
+
+    \item \textbf{Dataset Class}  
+      The \texttt{AudioDataset} class:
+      \begin{itemize}
+          \item Handles on-the-fly audio loading, resampling, and transcript tokenization.
+          \item Converts audio files into numerical input values and transcripts into tokenized labels.
+          \item Ensures files and transcripts exist and handles edge cases like missing extensions.
+      \end{itemize}
+
+    \item \textbf{Data Collator}  
+      The \texttt{DataCollatorCTCWithPadding} class:
+      \begin{itemize}
+          \item Pads audio inputs and tokenized labels to ensure uniform batch sizes.
+          \item Masks padding in the labels with -100 to ignore during loss calculation.
+      \end{itemize}
+
+    \item \textbf{Datasets and DataLoaders}  
+      Training and validation datasets are created using the cleaned CSV files and the \texttt{AudioDataset} class.
+      Data loaders with the custom data collator prepare batches of data for the model.
+
+    \item \textbf{Model Initialization}  
+      The \texttt{Wav2Vec2ForCTC} model:
+      \begin{itemize}
+          \item Is initialized with pretrained Wav2Vec2 checkpoint facebook/wav2vec2-large-xlsr-53
+          \item Fine-tunes the model by adding a classification head with the vocabulary size.
+          \item Freezes the feature extractor layers to focus training on the CTC head.
+      \end{itemize}
+
+    \item \textbf{Training Loop}  
+      The script trains the model for 2 epochs:
+      \begin{itemize}
+          \item Training Phase: For each batch, predictions (outputs) are computed, and loss (outputs.loss) is calculated. Model parameters are updated using backpropagation.
+          \item Validation Phase: Gradient calculation is disabled for efficiency. Predictions and loss for the validation set are computed. Predictions and references are decoded for evaluation.
+      \end{itemize}
+
+    \item \textbf{Metrics}  
+      Two metrics are calculated:
+      \begin{itemize}
+          \item WER (Word Error Rate): Proportion of incorrect words compared to the total number of words in references.
+          \item CER (Character Error Rate): Proportion of incorrect characters compared to the total number of characters in references.
+          \item The \texttt{calculate\_cer} function manually computes CER by comparing predicted and reference transcripts.
+      \end{itemize}
+
+    \item \textbf{Training Outputs}  
+      For each epoch, the script prints:
+      \begin{itemize}
+          \item Average training loss.
+          \item Validation loss.
+          \item WER and CER for validation.
+      \end{itemize}
+\end{itemize}
+
+\subsection*{Model Saving}
+
+The trained model and processor were saved at the specified directories:
+
+\begin{itemize}
+    \item \textbf{Trained Model Path}: `\textbf{./wav2vec2-arabic-model2}`
+    \item \textbf{Processor Path}: `\textbf{./wav2vec2-arabic-processor2}`
+\end{itemize}
+
+\subsection*{Training Results for Egyptian Arabic Dataset}
+
+The model trained on the Egyptian Arabic dataset produced the following results:
+
+\begin{itemize}
+    \item \textbf{Epoch 1:}
+    \begin{itemize}
+        \item Loss: 2.283299792775672
+        \item Validation WER: 0.7395340026520174
+        \item Validation CER:  0.0244
+    \end{itemize}
+    \item \textbf{Epoch 2:}
+    \begin{itemize}
+        \item Loss: 0.8704423548760818
+        \item Validation WER: 0.6258761129001705
+        \item Validation CER: 0.0315
+    \end{itemize}
+    \item \textbf{Epoch 3:}
+    \begin{itemize}
+        \item Loss: 0.6984904283136588
+        \item Validation WER: 0.5748247774199658
+        \item Validation CER: 0.0358
+    \end{itemize}
+\end{itemize}
+
+
+
+\end{document}
